@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+  <style>
+    canvas {
+      border: 1px solid #000;
+      display: block;
+      margin: 20px auto;
+    }
+
+    .game-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+  <title>Car Escape Game</title>
+</head>
+
+<body>
+  <div class="container game-container">
+    <h1 class="mb-4">Car Escape Game</h1>
+    <p id="timer" class="mb-3">Game Duration: 0s</p>
+    <p id="collisionCount" class="mb-3">Collisions: 0</p>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <button class="btn btn-primary me-2" onclick="startGame()">Start</button>
+    <button class="btn btn-secondary" onclick="pauseGame()">Pause</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-eM5hECtH9PLKDyf5p7nyPphjZPd1UK76Qk20XmYUEl5rw8Mwsz2ve4DjP5ZNTlQg" crossorigin="anonymous"></script>
+  
+  <script>
+    let gameDuration = 0; // in milliseconds
+    let collisionCount = 0; // Track collision count
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const car = {
+      x: 365,
+      y: 550,
+      width: 70,
+      height: 30,
+      speed: 35
+    };
+
+    const obstacles = [];
+    const obstacleSpeed = 8;
+    let gameInterval;
+    let timerInterval; // Added timer interval variable
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    function handleKeyPress(event) {
+      switch (event.key) {
+        case "ArrowLeft":
+          car.x -= car.speed;
+          break;
+        case "ArrowRight":
+          car.x += car.speed;
+          break;
+      }
+    }
+
+    function createObstacle() {
+      const obstacleWidth = Math.random() * 50 + 20;
+      const obstacleX = Math.random() * (canvas.width - obstacleWidth);
+      const obstacle = { x: obstacleX, y: -30, width: obstacleWidth, height: 30 };
+      obstacles.push(obstacle);
+    }
+
+    function moveObstacles() {
+      for (let i = 0; i < obstacles.length; i++) {
+        obstacles[i].y += obstacleSpeed;
+
+        if (obstacles[i].y > canvas.height) {
+          obstacles.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    function checkCollision() {
+      for (let i = 0; i < obstacles.length; i++) {
+        if (
+          car.x < obstacles[i].x + obstacles[i].width &&
+          car.x + car.width > obstacles[i].x &&
+          car.y < obstacles[i].y + obstacles[i].height &&
+          car.y + car.height > obstacles[i].y
+        ) {
+          collisionCount++;
+          document.getElementById("collisionCount").innerText = "Collisions: " + collisionCount;
+          obstacles.splice(i, 1); // Remove the collided obstacle
+          i--;
+          if (collisionCount >= 10) {
+            alert("Game Over! 10 collisions reached. Try again.");
+            resetGame();
+          }
+        }
+      }
+    }
+
+    function startGame() {
+      resetGame();
+      gameDuration = 0;
+      collisionCount = 0; // Reset collision count
+      gameInterval = setInterval(gameLoop, 20);
+      timerInterval = setInterval(updateTimer, 1000); // Update the timer every second
+    }
+
+    function updateTimer() {
+      gameDuration += 1000; // Increment by 1 second
+      const seconds = Math.floor(gameDuration / 1000);
+      document.getElementById("timer").innerText = "Game Duration: " + seconds + "s";
+    }
+
+    function pauseGame() {
+      clearInterval(gameInterval);
+      clearInterval(timerInterval); // Clear the timer interval
+    }
+
+    function resetGame() {
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      gameDuration = 0;
+      collisionCount = 0; // Reset collision count
+      car.x = 365;
+      car.y = 550;
+      obstacles.length = 0;
+      document.getElementById("timer").innerText = "Game Duration: 0s"; // Reset timer display
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (Math.random() < 0.1) {
+        createObstacle();
+      }
+
+      moveObstacles();
+
+      ctx.fillStyle = "#00F";
+      ctx.fillRect(car.x, car.y, car.width, car.height);
+
+      ctx.fillStyle = "#F00";
+      for (const obstacle of obstacles) {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      }
+
+      checkCollision();
+
+      if (gameDuration >= 50000) { // Game duration limit (30 seconds in this example)
+        clearInterval(gameInterval);
+        clearInterval(timerInterval);
+        alert("Game Over! Time's up. Try again.");
+        resetGame();
+      }
+    }
+  </script>
+</body>
+
+</html>
